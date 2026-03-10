@@ -101,8 +101,13 @@ src/
 
 ### Variables de Entorno
 ```bash
+# Para desarrollo local
 VITE_API_URL=http://localhost:8080/api
 VITE_WS_URL=ws://localhost:8080/ws
+
+# Para producción (configurado en frontend/src/services/api.js)
+API_URL=https://live-board-backend-hfhff6b0f6cvf3h8.westus3-01.azurewebsites.net/api
+WS_URL=wss://live-board-backend-hfhff6b0f6cvf3h8.westus3-01.azurewebsites.net/ws
 ```
 
 ### Comandos de Desarrollo
@@ -175,16 +180,27 @@ El proyecto utiliza Biome para formateo y linting con las siguientes reglas:
 
 ## Despliegue en Producción
 
-### AWS EC2
-1. Configurar instancia EC2 con security group apropiado
-2. Instalar Node.js y Java Runtime
-3. Clonar repositorio y construir proyecto
-4. Configurar variables de entorno de producción
-5. Ejecutar backend y frontend con process manager
-6. Configurar reverse proxy (nginx) si es necesario
+### URLs de Producción
+- **Frontend**: https://live-board-fcb6a0eedtdcgfh6.westus3-01.azurewebsites.net
+- **Backend**: https://live-board-backend-hfhff6b0f6cvf3h8.westus3-01.azurewebsites.net/api
+- **WebSocket**: wss://live-board-backend-hfhff6b0f6cvf3h8.westus3-01.azurewebsites.net/ws
+
+### Azure Web Apps
+El proyecto está desplegado en Azure Web Services:
+- **Frontend**: App Service estático con React
+- **Backend**: App Service con Spring Boot y WebSocket
+- **Región**: West US 3
+- **Protocolos**: HTTPS/WSS seguros
+
+### GitHub Actions
+Despliegue automatizado mediante GitHub Actions:
+- **Trigger**: Push a rama main
+- **Build**: npm install y build en board-frontend/
+- **Deploy**: Azure Web Apps Deploy action
+- **Artefactos**: board-frontend/dist/
 
 ### Consideraciones de Producción
-- **CORS**: Configurado para permitir orígenes específicos
+- **CORS**: Configurado para permitir dominio del frontend
 - **HTTPS**: Configuración SSL/TLS para WebSocket seguro
 - **Escalabilidad**: Arquitectura sin estado para balanceo de carga
 - **Monitoreo**: Logs estructurados para debugging en producción
@@ -217,6 +233,9 @@ El proyecto utiliza Biome para formateo y linting con las siguientes reglas:
 - Optimización de renderizado con P5.js
 - Gestión adecuada de conexiones WebSocket
 
-## Conclusión
 
-El proyecto cumple completamente con los requisitos del LAB 5, implementando un tablero colaborativo robusto con características avanzadas de resiliencia, seguridad y rendimiento. La arquitectura modular facilita el mantenimiento y escalabilidad, mientras que la experiencia de usuario proporciona feedback claro y funcionamiento intuitivo.
+El proyecto cumple implementando un tablero colaborativo robusto con características avanzadas de resiliencia, seguridad y rendimiento. La arquitectura modular facilita el mantenimiento y escalabilidad, mientras que la experiencia de usuario proporciona feedback claro y funcionamiento intuitivo.
+
+**Autor:** Marlio Jose Charry Espitia  
+**Versión:** 1.0.0  
+**Última actualización:** Marzo 2026
