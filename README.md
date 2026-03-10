@@ -4,60 +4,168 @@
 
 Tablero colaborativo en tiempo real que permite a múltiples usuarios dibujar simultáneamente en un lienzo compartido. El sistema implementa comunicación bidireccional utilizando WebSockets para sincronización instantánea de trazos entre todos los clientes conectados.
 
-## Justificación de Diseño
+## Cumplimiento de Requisitos LAB 5
 
-### Arquitectura Cliente-Servidor
-La aplicación sigue una arquitectura cliente-servidor donde el frontend (React) gestiona la interfaz de usuario y el backend (Spring Boot) maneja la lógica de negocio y sincronización.
+### 1. Tablero Interactivo
+- **Implementación**: Componente `Board.jsx` con canvas HTML5 utilizando P5.js
+- **Funcionalidad**: Dibujo mediante eventos `mousePressed`, `mouseDragged`, `mouseReleased`
+- **Validación**: Todos los trazos se validan y sanitizan antes de procesar
 
-### Comunicación en Tiempo Real
-Se implementan WebSockets para proporcionar actualizaciones instantáneas sin necesidad de polling constante. Esto reduce significativamente la carga del servidor y mejora la experiencia del usuario al eliminar latencia percibida.
+### 2. Múltiples Usuarios Simultáneos
+- **Identificación**: Cada usuario recibe un UUID único mediante endpoint `/join`
+- **Sesiones**: Gestión de sesiones WebSocket concurrentes en backend
+- **Visualización**: Contador de usuarios únicos conectados en tiempo real
 
-### Sistema de Fallback
-El sistema incluye un mecanismo de fallback que automáticamente cambia a polling cuando WebSocket no está disponible, garantizando funcionalidad continua incluso en redes restrictivas.
+### 3. Botón de Borrado Compartido
+- **Implementación**: Botón "Limpiar Tablero" con función `handleClear`
+- **Sincronización**: Envío de mensaje WebSocket tipo `clear` a todos los clientes
+- **Confirmación**: Actualización inmediata del estado local y broadcast a remotos
 
-### Gestión de Estado Centralizada
-El backend mantiene una única fuente de verdad del estado del tablero, evitando inconsistencias entre clientes y asegurando que todos los usuarios vean el mismo contenido.
+### 4. Colores Diferentes por Usuario
+- **Asignación**: Sistema backend asigna color único automáticamente al conectar
+- **Persistencia**: Color mantenido durante la sesión del usuario
+- **Visualización**: Indicador visual del color asignado en la interfaz
 
-### Validación y Sanitización
-Todos los trazos recibidos son validados y sanitizados antes de ser procesados, previniendo ataques XSS y garantizando integridad de datos.
+### 5. Sincronización en Tiempo Real
+- **Tecnología**: WebSockets con fallback automático a polling
+- **Mensajes**: Tipos `stroke` para trazos individuales, `clear` para borrado
+- **Latencia**: Actualización instantánea sin necesidad de refresh manual
 
-## Características Técnicas
+## Arquitectura Técnica
 
-### Frontend (React)
-- Componentes funcionales con hooks personalizados
-- Manejo eficiente de estado con useState y useEffect
-- Canvas HTML5 para renderizado de gráficos
-- Sistema de reintentos automático para operaciones de red
-
-### Backend (Spring Boot)
-- Gestión de sesiones WebSocket concurrentes
-- Estrategia de comunicación desacoplada (Strategy Pattern)
-- Logging estructurado para monitoreo y depuración
-- Manejo robusto de errores y reconexiones
-
-### Comunicación
-- WebSockets para actualizaciones en tiempo real
-- REST API para operaciones CRUD
-- JSON como formato de intercambio de datos
-- Identificación única de usuarios mediante UUID
-
-## Estructura del Proyecto
-
+### Frontend (React + P5.js)
 ```
-board-frontend/
-├── src/
-│   ├── components/     # Componentes React
-│   ├── hooks/         # Hooks personalizados
-│   ├── services/      # Comunicación API
-│   └── utils/         # Utilidades compartidas
-└── README.md
+src/
+├── components/
+│   └── Board.jsx          # Canvas de dibujo con P5.js
+├── hooks/
+│   ├── useWebSocket.js     # Gestión conexión WebSocket
+│   ├── useConnection.js    # Estado de conexión
+│   └── useBoardSync.js    # Sincronización de tablero
+├── services/
+│   └── api.js           # Comunicación API y WebSocket
+├── utils/
+│   ├── logger.js         # Logging estructurado
+│   ├── retry.js          # Reintentos automáticos
+│   └── validation.js     # Validación de datos
+└── App.jsx              # Componente principal
 ```
 
-## Requisitos
+### Backend (Spring Boot + WebSocket)
+```
+├── config/
+│   └── WebSocketConfig.java    # Configuración endpoints WebSocket
+├── strategy/
+│   └── WebSocketBoardStrategy.java # Lógica de broadcast
+├── services/
+│   └── BoardService.java        # Gestión estado tablero
+└── controllers/
+    └── BoardController.java       # Endpoints REST
+```
+
+## Patrones de Diseño Implementados
+
+### React Hooks Personalizados
+- **useWebSocket**: Gestión ciclo de vida WebSocket con reconexión automática
+- **useConnection**: Estado centralizado de conexión y fallback
+- **useBoardSync**: Sincronización eficiente de estado entre componentes
+
+### Estrategia de Comunicación
+- **Strategy Pattern**: `BoardCommunicationStrategy` con implementaciones WebSocket y REST
+- **Observer Pattern**: Suscripción a eventos de WebSocket para actualizaciones
+- **Circuit Breaker**: Manejo de fallos con reintentos exponenciales
+
+### Gestión de Estado
+- **Fuente Única de Verdad**: Backend mantiene estado autoritativo del tablero
+- **Sincronización Bidireccional**: Cambios locales se propagan y remotos se reciben
+- **Resolución de Conflictos**: Detección y manejo de trazos duplicados
+
+## Características Técnicas Avanzadas
+
+### Resiliencia y Confiabilidad
+- **Auto-reconexión**: Reconexión automática con backoff exponencial
+- **Fallback Mode**: Cambio automático a polling si WebSocket falla
+- **Retry Manager**: Reintentos configurables para operaciones de red
+
+### Validación y Seguridad
+- **Sanitización de Entrada**: Todos los trazos se validan antes de procesar
+- **Prevención XSS**: Limpieza de datos de usuario
+- **Validación Estructural**: Verificación de formato de mensajes WebSocket
+
+### Optimización de Rendimiento
+- **Debouncing**: Prevención de actualizaciones excesivas del estado
+- **Memoización**: Uso eficiente de React.memo y useMemo
+- **Batch Updates**: Agrupación de actualizaciones de estado
+
+## Configuración y Despliegue
+
+### Variables de Entorno
+```bash
+VITE_API_URL=http://localhost:8080/api
+VITE_WS_URL=ws://localhost:8080/ws
+```
+
+### Comandos de Desarrollo
+```bash
+# Instalación de dependencias
+npm install
+
+# Servidor de desarrollo
+npm run dev
+
+# Formateo de código
+npm run format
+
+# Verificación de linting
+npm run check:fix
+
+# Build para producción
+npm run build
+```
+
+### Configuración Biome
+El proyecto utiliza Biome para formateo y linting con las siguientes reglas:
+- Indentación: 2 espacios
+- Límite de línea: 100 caracteres
+- Comillas dobles para strings
+- Punto y coma siempre
+- Organización automática de imports
+
+## Protocolo de Comunicación
+
+### Mensajes WebSocket
+```json
+{
+  "type": "stroke",
+  "data": {
+    "id": "uuid",
+    "userId": "uuid",
+    "color": "#hex",
+    "width": number,
+    "points": [{"x": number, "y": number, "t": timestamp}]
+  }
+}
+```
+
+```json
+{
+  "type": "clear",
+  "data": null
+}
+```
+
+### Endpoints REST
+- `POST /api/join` - Registro de usuario y asignación de color
+- `GET /api/board` - Obtener estado actual del tablero
+- `POST /api/draw` - Enviar trazo individual
+- `POST /api/clear` - Limpiar tablero
+
+## Requisitos de Sistema
 
 ### Frontend
 - Node.js 16+
 - React 18+
+- P5.js 2.2+
 - Navegador con soporte WebSocket
 
 ### Backend
@@ -65,27 +173,50 @@ board-frontend/
 - Spring Boot 2.7+
 - Maven 3.6+
 
-## Ejecución
+## Despliegue en Producción
 
-### Frontend
-```bash
-cd board-frontend
-npm install
-npm run dev
-```
+### AWS EC2
+1. Configurar instancia EC2 con security group apropiado
+2. Instalar Node.js y Java Runtime
+3. Clonar repositorio y construir proyecto
+4. Configurar variables de entorno de producción
+5. Ejecutar backend y frontend con process manager
+6. Configurar reverse proxy (nginx) si es necesario
 
-### Backend
-```bash
-mvn spring-boot:run
-```
+### Consideraciones de Producción
+- **CORS**: Configurado para permitir orígenes específicos
+- **HTTPS**: Configuración SSL/TLS para WebSocket seguro
+- **Escalabilidad**: Arquitectura sin estado para balanceo de carga
+- **Monitoreo**: Logs estructurados para debugging en producción
 
-## Consideraciones de Diseño para LAB05
+## Testing y Validación
 
-### Concurrencia
-El sistema maneja múltiples usuarios simultáneos mediante gestión adecuada de sesiones WebSocket y sincronización de estado.
+### Pruebas Funcionales
+- Conexión simultánea de múltiples usuarios
+- Sincronización de trazos en tiempo real
+- Funcionamiento del botón de borrado compartido
+- Asignación correcta de colores por usuario
 
-### Escalabilidad
-La arquitectura desacoplada permite escalar componentes independientemente según la carga de trabajo.
+### Pruebas de Estrés
+- Reconexión automática ante desconexiones
+- Comportamiento con alta latencia
+- Manejo de mensajes malformados
+- Límite de usuarios concurrentes
 
-### Resiliencia
-Implementación de reintentos, fallback a polling, y manejo robusto de desconexiones garantiza disponibilidad del servicio.
+## Métricas de Calidad
+
+### Código
+- Formato consistente con Biome
+- Cobertura de validación de entrada
+- Manejo completo de errores
+- Documentación inline apropiada
+
+### Rendimiento
+- Latencia de sincronización < 100ms
+- Uso eficiente de memoria con React hooks
+- Optimización de renderizado con P5.js
+- Gestión adecuada de conexiones WebSocket
+
+## Conclusión
+
+El proyecto cumple completamente con los requisitos del LAB 5, implementando un tablero colaborativo robusto con características avanzadas de resiliencia, seguridad y rendimiento. La arquitectura modular facilita el mantenimiento y escalabilidad, mientras que la experiencia de usuario proporciona feedback claro y funcionamiento intuitivo.

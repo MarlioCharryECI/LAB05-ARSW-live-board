@@ -1,5 +1,5 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
-const WS_URL = import.meta.env.VITE_WS_URL || "ws://localhost:8080/ws";
+const API_URL = "https://live-board-backend-hfhff6b0f6cvf3h8.westus3-01.azurewebsites.net/api";
+const WS_URL = "wss://live-board-backend-hfhff6b0f6cvf3h8.westus3-01.azurewebsites.net/ws";
 
 let websocket = null;
 
