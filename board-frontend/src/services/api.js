@@ -1,4 +1,75 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8080/ws';
+
+let websocket = null;
+
+// WebSocket connection
+export const connectWebSocket = (onMessage, onError, onClose) => {
+    const userId = localStorage.getItem('userId');
+    
+    if (websocket) {
+        websocket.close();
+    }
+
+    websocket = new WebSocket(`${WS_URL}?userId=${userId}`);
+
+    websocket.onopen = () => {
+        console.log('WebSocket connected');
+    };
+
+    websocket.onmessage = (event) => {
+        try {
+            const message = JSON.parse(event.data);
+            console.log('WebSocket message:', message);
+            onMessage(message);
+        } catch (error) {
+            console.error('Error parsing WebSocket message:', error);
+        }
+    };
+
+    websocket.onclose = (event) => {
+        console.log('WebSocket disconnected', event.code, event.reason);
+        if (onClose) onClose(event);
+        
+        // Auto-reconnect after 3 seconds if not a normal closure
+        if (event.code !== 1000) {
+            setTimeout(() => connectWebSocket(onMessage, onError, onClose), 3000);
+        }
+    };
+
+    websocket.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        if (onError) onError(error);
+    };
+
+    return websocket;
+};
+
+export const disconnectWebSocket = () => {
+    if (websocket) {
+        websocket.close(1000, 'Client disconnect');
+        websocket = null;
+    }
+};
+
+export const sendWebSocketMessage = (message) => {
+    console.log('🚀 Attempting to send WebSocket message:', message);
+    console.log('📡 WebSocket state:', websocket ? websocket.readyState : 'null');
+    
+    if (websocket && websocket.readyState === WebSocket.OPEN) {
+        console.log('✅ WebSocket is open, sending message');
+        const messageString = JSON.stringify(message);
+        console.log('🚀 SENDING RAW MESSAGE:', messageString);
+        websocket.send(messageString);
+        return true;
+    } else {
+        console.log('❌ WebSocket is not open. State:', websocket ? websocket.readyState : 'null');
+        if (websocket) {
+            console.log('WebSocket states: CONNECTING=1, OPEN=2, CLOSING=3, CLOSED=4');
+        }
+        return false;
+    }
+};
 
 export async function join(userId) {
     const res = await fetch(`${API_URL}/join`, {
