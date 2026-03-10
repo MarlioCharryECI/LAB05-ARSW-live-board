@@ -1,34 +1,31 @@
-import React, { useState, useEffect } from 'react';
-import { v4 as uuidv4 } from 'uuid';
-import Board from './components/Board';
-import { join, sendStroke, clearBoard, getBoard, sendWebSocketMessage } from './services/api';
-import { useWebSocket } from './hooks/useWebSocket';
-import { retryManager } from './utils/retry';
-import { DataValidator } from './utils/validation';
-import { Logger } from './utils/logger';
+import React, { useState, useEffect } from "react";
+import { v4 as uuidv4 } from "uuid";
+import Board from "./components/Board";
+import { join, sendStroke, clearBoard, getBoard, sendWebSocketMessage } from "./services/api";
+import { useWebSocket } from "./hooks/useWebSocket";
+import { retryManager } from "./utils/retry";
+import { DataValidator } from "./utils/validation";
+import { Logger } from "./utils/logger";
 
 const App = () => {
-  const [userId, setUserId] = useState('');
-  const [color, setColor] = useState('#000000');
+  const [userId, setUserId] = useState("");
+  const [color, setColor] = useState("#000000");
   const [strokes, setStrokes] = useState([]);
   const [isConnected, setIsConnected] = useState(false);
   const [connectionError, setConnectionError] = useState(null);
 
-    const initializeUser = async () => {
+  const initializeUser = async () => {
     try {
       const uid = uuidv4();
       setUserId(uid);
-      localStorage.setItem('userId', uid);
-      
-      const response = await retryManager.executeWithRetry(
-        () => join(uid),
-        'user-join'
-      );
-      
+      localStorage.setItem("userId", uid);
+
+      const response = await retryManager.executeWithRetry(() => join(uid), "user-join");
+
       setColor(response.color);
       setConnectionError(null);
     } catch (error) {
-      Logger.error('Failed to initialize user', error);
+      Logger.error("Failed to initialize user", error);
       setConnectionError(error.message);
     }
   };
@@ -37,27 +34,27 @@ const App = () => {
     setTimeout(initializeUser, 0);
   }, []);
 
-    const handleBoardUpdate = (newStrokesOrFn) => {
-    setStrokes(prevStrokes => {
+  const handleBoardUpdate = (newStrokesOrFn) => {
+    setStrokes((prevStrokes) => {
       let newStrokes;
-      
-      if (typeof newStrokesOrFn === 'function') {
+
+      if (typeof newStrokesOrFn === "function") {
         newStrokes = newStrokesOrFn(prevStrokes);
       } else {
         newStrokes = newStrokesOrFn;
       }
-      
+
       if (prevStrokes.length !== newStrokes.length) {
         return newStrokes;
       }
-      
-      const prevIds = prevStrokes.map(s => s.id).sort();
-      const newIds = newStrokes.map(s => s.id).sort();
-      
+
+      const prevIds = prevStrokes.map((s) => s.id).sort();
+      const newIds = newStrokes.map((s) => s.id).sort();
+
       if (JSON.stringify(prevIds) !== JSON.stringify(newIds)) {
         return newStrokes;
       }
-      
+
       return prevStrokes;
     });
   };
@@ -66,27 +63,28 @@ const App = () => {
     setIsConnected(connected);
   };
 
-  const { isConnected: wsConnected, connectionError: wsError, useFallback } = useWebSocket(
-    handleBoardUpdate,
-    handleConnectionChange
-  );
+  const {
+    isConnected: wsConnected,
+    connectionError: wsError,
+    useFallback,
+  } = useWebSocket(handleBoardUpdate, handleConnectionChange);
 
-    useEffect(() => {
+  useEffect(() => {
     if (!wsConnected) return;
 
     const loadInitialBoard = async () => {
       try {
         const boardData = await retryManager.executeWithRetry(
           () => getBoard(),
-          'initial-board-load'
+          "initial-board-load"
         );
-        
+
         if (Array.isArray(boardData)) {
           setStrokes(boardData);
         }
       } catch (error) {
-        Logger.error('Error loading initial board', error);
-        setConnectionError('Failed to load board');
+        Logger.error("Error loading initial board", error);
+        setConnectionError("Failed to load board");
       }
     };
 
@@ -100,7 +98,7 @@ const App = () => {
             handleBoardUpdate(boardData);
           }
         } catch (error) {
-          Logger.error('Polling error', error);
+          Logger.error("Polling error", error);
         }
       }, 1000);
 
@@ -108,81 +106,76 @@ const App = () => {
     }
   }, [wsConnected, useFallback]);
 
-    const handleStrokeEnd = async (rawStroke) => {
+  const handleStrokeEnd = async (rawStroke) => {
     try {
       const validation = DataValidator.validateStroke(rawStroke);
-      
+
       if (!validation.isValid) {
         return;
       }
-      
+
       const stroke = DataValidator.sanitizeStroke(rawStroke);
-      
-      setStrokes(prev => {
-        if (prev.some(s => s.id === stroke.id)) {
+
+      setStrokes((prev) => {
+        if (prev.some((s) => s.id === stroke.id)) {
           return prev;
         }
         return [...prev, stroke];
       });
-      
-      await retryManager.executeWithRetry(
-        () => sendStroke(stroke),
-        'send-stroke'
-      );
-      
+
+      await retryManager.executeWithRetry(() => sendStroke(stroke), "send-stroke");
     } catch (error) {
-      Logger.error('Error handling stroke', error);
+      Logger.error("Error handling stroke", error);
     }
   };
 
-    const handleClear = async () => {
+  const handleClear = async () => {
     try {
-      sendWebSocketMessage({ type: 'clear' });
-      
-      await retryManager.executeWithRetry(
-        () => clearBoard(),
-        'clear-board'
-      );
-      
+      sendWebSocketMessage({ type: "clear" });
+
+      await retryManager.executeWithRetry(() => clearBoard(), "clear-board");
+
       setStrokes([]);
     } catch (error) {
-      Logger.error('Error clearing board', error);
+      Logger.error("Error clearing board", error);
     }
   };
 
   if (!wsConnected) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        flexDirection: 'column',
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh',
-        fontSize: '18px',
-        gap: '20px'
-      }}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          fontSize: "18px",
+          gap: "20px",
+        }}
+      >
         <div>
           {connectionError ? (
             <>
-              <div style={{ color: '#ff4444', marginBottom: '10px' }}>
+              <div style={{ color: "#ff4444", marginBottom: "10px" }}>
                 Error de conexión: {connectionError}
               </div>
-              <button 
+              <button
                 onClick={initializeUser}
                 style={{
-                  padding: '10px 20px',
-                  backgroundColor: '#007bff',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer'
+                  padding: "10px 20px",
+                  backgroundColor: "#007bff",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
                 }}
               >
                 Reintentar Conexión
               </button>
             </>
           ) : (
-            'Conectando al tablero...'
+            "Conectando al tablero..."
           )}
         </div>
       </div>
@@ -190,53 +183,55 @@ const App = () => {
   }
 
   return (
-    <div style={{ padding: '20px' }}>
-      <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
+    <div style={{ padding: "20px" }}>
+      <div
+        style={{
+          marginBottom: "20px",
+          display: "flex",
+          alignItems: "center",
+          gap: "20px",
+          flexWrap: "wrap",
+        }}
+      >
         <h2>Tablero Colaborativo</h2>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <span>Tu color:</span>
-          <div style={{ 
-            width: '30px', 
-            height: '30px', 
-            backgroundColor: color, 
-            border: '2px solid #333',
-            borderRadius: '4px'
-          }} />
+          <div
+            style={{
+              width: "30px",
+              height: "30px",
+              backgroundColor: color,
+              border: "2px solid #333",
+              borderRadius: "4px",
+            }}
+          />
           <span>({userId.substring(0, 8)}...)</span>
         </div>
-        <button 
+        <button
           onClick={handleClear}
           style={{
-            padding: '10px 20px',
-            backgroundColor: '#ff4444',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer'
+            padding: "10px 20px",
+            backgroundColor: "#ff4444",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer",
           }}
         >
           Limpiar Tablero
         </button>
         {useFallback && (
-          <span style={{ color: '#ff9800', fontSize: '14px' }}>
-            Modo de respaldo activado
-          </span>
+          <span style={{ color: "#ff9800", fontSize: "14px" }}>Modo de respaldo activado</span>
         )}
         {connectionError && (
-          <span style={{ color: '#ff4444', fontSize: '14px' }}>
-            Error de conexión
-          </span>
+          <span style={{ color: "#ff4444", fontSize: "14px" }}>Error de conexión</span>
         )}
       </div>
-      
-      <Board 
-        strokes={strokes} 
-        onStrokeEnd={handleStrokeEnd} 
-        color={color} 
-      />
-      
-      <div style={{ marginTop: '20px', fontSize: '14px', color: '#666' }}>
-        Usuarios conectados: {new Set(strokes.map(s => s.userId)).size}
+
+      <Board strokes={strokes} onStrokeEnd={handleStrokeEnd} color={color} />
+
+      <div style={{ marginTop: "20px", fontSize: "14px", color: "#666" }}>
+        Usuarios conectados: {new Set(strokes.map((s) => s.userId)).size}
       </div>
     </div>
   );

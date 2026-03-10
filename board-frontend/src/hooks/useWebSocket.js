@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
-import { connectWebSocket, disconnectWebSocket } from '../services/api';
-import { Logger } from '../utils/logger';
+import { useState, useEffect, useRef } from "react";
+import { connectWebSocket, disconnectWebSocket } from "../services/api";
+import { Logger } from "../utils/logger";
 
 export const useWebSocket = (onBoardUpdate, onConnectionChange) => {
   const [isConnected, setIsConnected] = useState(false);
@@ -12,15 +12,15 @@ export const useWebSocket = (onBoardUpdate, onConnectionChange) => {
   const handleMessage = (message) => {
     try {
       switch (message.type) {
-        case 'board_update':
+        case "board_update":
           if (message.data && Array.isArray(message.data.strokes)) {
             onBoardUpdate(message.data.strokes);
           }
           break;
-        case 'stroke':
+        case "stroke":
           if (message.data) {
-            onBoardUpdate(prev => {
-              const exists = prev.some(s => s.id === message.data.id);
+            onBoardUpdate((prev) => {
+              const exists = prev.some((s) => s.id === message.data.id);
               if (!exists) {
                 return [...prev, message.data];
               }
@@ -28,30 +28,30 @@ export const useWebSocket = (onBoardUpdate, onConnectionChange) => {
             });
           }
           break;
-        case 'clear':
-        case 'clear_board':
-        case 'board_clear':
+        case "clear":
+        case "clear_board":
+        case "board_clear":
           onBoardUpdate([]);
           break;
-        case 'heartbeat':
+        case "heartbeat":
           break;
-        case 'error':
-          setConnectionError(message.data.message || 'WebSocket error');
+        case "error":
+          setConnectionError(message.data.message || "WebSocket error");
           break;
-        case 'connection_status':
+        case "connection_status":
           break;
         default:
-          Logger.warn('Unknown WebSocket message type', { type: message.type });
+          Logger.warn("Unknown WebSocket message type", { type: message.type });
       }
     } catch (error) {
-      Logger.error('Error handling WebSocket message', error);
+      Logger.error("Error handling WebSocket message", error);
     }
   };
 
   const handleError = (error) => {
-    setConnectionError('Connection error');
+    setConnectionError("Connection error");
     setIsConnected(false);
-    
+
     if (!useFallback) {
       setUseFallback(true);
     }
@@ -59,9 +59,9 @@ export const useWebSocket = (onBoardUpdate, onConnectionChange) => {
 
   const handleClose = (event) => {
     setIsConnected(false);
-    
+
     if (event.code !== 1000) {
-      setConnectionError('Connection lost');
+      setConnectionError("Connection lost");
     }
   };
 
@@ -69,7 +69,7 @@ export const useWebSocket = (onBoardUpdate, onConnectionChange) => {
     setUseFallback(true);
     setIsConnected(true);
     setConnectionError(null);
-    
+
     if (onConnectionChange) {
       onConnectionChange(true);
     }
@@ -79,7 +79,7 @@ export const useWebSocket = (onBoardUpdate, onConnectionChange) => {
     try {
       connectWebSocket(handleMessage, handleError, handleClose);
     } catch (error) {
-      setConnectionError('Failed to connect');
+      setConnectionError("Failed to connect");
       setIsConnected(false);
       startFallbackPolling();
     }
@@ -100,7 +100,7 @@ export const useWebSocket = (onBoardUpdate, onConnectionChange) => {
 
   useEffect(() => {
     const ws = connectWebSocket(handleMessage, handleError, handleClose);
-    
+
     ws.onopen = () => {
       setIsConnected(true);
       setConnectionError(null);
@@ -120,6 +120,6 @@ export const useWebSocket = (onBoardUpdate, onConnectionChange) => {
     connectionError,
     useFallback,
     connect,
-    disconnect
+    disconnect,
   };
 };
