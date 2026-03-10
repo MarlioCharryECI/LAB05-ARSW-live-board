@@ -34,7 +34,11 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: board-frontend/dist/
+          path: |
+            board-frontend/dist/
+            board-frontend/server.js
+            board-frontend/web.config
+            board-frontend/package.json
 
   deploy:
     runs-on: ubuntu-latest
