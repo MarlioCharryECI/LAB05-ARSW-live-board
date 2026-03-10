@@ -53,22 +53,11 @@ export const disconnectWebSocket = () => {
 };
 
 export const sendWebSocketMessage = (message) => {
-    console.log('🚀 Attempting to send WebSocket message:', message);
-    console.log('📡 WebSocket state:', websocket ? websocket.readyState : 'null');
-    
     if (websocket && websocket.readyState === WebSocket.OPEN) {
-        console.log('✅ WebSocket is open, sending message');
-        const messageString = JSON.stringify(message);
-        console.log('🚀 SENDING RAW MESSAGE:', messageString);
-        websocket.send(messageString);
+        websocket.send(JSON.stringify(message));
         return true;
-    } else {
-        console.log('❌ WebSocket is not open. State:', websocket ? websocket.readyState : 'null');
-        if (websocket) {
-            console.log('WebSocket states: CONNECTING=1, OPEN=2, CLOSING=3, CLOSED=4');
-        }
-        return false;
     }
+    return false;
 };
 
 export async function join(userId) {

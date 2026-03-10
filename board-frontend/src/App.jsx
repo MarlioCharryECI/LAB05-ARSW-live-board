@@ -13,15 +13,12 @@ const App = () => {
   const [strokes, setStrokes] = useState([]);
   const [isConnected, setIsConnected] = useState(false);
   const [connectionError, setConnectionError] = useState(null);
-  const [isReconnecting, setIsReconnecting] = useState(false);
 
-  const initializeUser = async () => {
+    const initializeUser = async () => {
     try {
       const uid = uuidv4();
       setUserId(uid);
       localStorage.setItem('userId', uid);
-      
-      Logger.info('Initializing user', { userId: uid });
       
       const response = await retryManager.executeWithRetry(
         () => join(uid),
@@ -30,7 +27,6 @@ const App = () => {
       
       setColor(response.color);
       setConnectionError(null);
-      Logger.info('User successfully connected', { userId: uid, color: response.color });
     } catch (error) {
       Logger.error('Failed to initialize user', error);
       setConnectionError(error.message);
@@ -41,11 +37,10 @@ const App = () => {
     setTimeout(initializeUser, 0);
   }, []);
 
-  const handleBoardUpdate = (newStrokesOrFn) => {
+    const handleBoardUpdate = (newStrokesOrFn) => {
     setStrokes(prevStrokes => {
       let newStrokes;
       
-      // Handle both direct array and function from WebSocket
       if (typeof newStrokesOrFn === 'function') {
         newStrokes = newStrokesOrFn(prevStrokes);
       } else {
@@ -53,10 +48,6 @@ const App = () => {
       }
       
       if (prevStrokes.length !== newStrokes.length) {
-        Logger.debug('Board updated - count changed', { 
-          old: prevStrokes.length, 
-          new: newStrokes.length 
-        });
         return newStrokes;
       }
       
@@ -64,7 +55,6 @@ const App = () => {
       const newIds = newStrokes.map(s => s.id).sort();
       
       if (JSON.stringify(prevIds) !== JSON.stringify(newIds)) {
-        Logger.debug('Board updated - content changed');
         return newStrokes;
       }
       
@@ -81,7 +71,7 @@ const App = () => {
     handleConnectionChange
   );
 
-  useEffect(() => {
+    useEffect(() => {
     if (!wsConnected) return;
 
     const loadInitialBoard = async () => {
@@ -93,7 +83,6 @@ const App = () => {
         
         if (Array.isArray(boardData)) {
           setStrokes(boardData);
-          Logger.info('Initial board loaded', { strokes: boardData.length });
         }
       } catch (error) {
         Logger.error('Error loading initial board', error);
@@ -103,9 +92,7 @@ const App = () => {
 
     loadInitialBoard();
 
-    // Start polling only in fallback mode
     if (useFallback) {
-      Logger.info('Using polling fallback mode');
       const pollInterval = setInterval(async () => {
         try {
           const boardData = await getBoard();
@@ -115,18 +102,17 @@ const App = () => {
         } catch (error) {
           Logger.error('Polling error', error);
         }
-      }, 1000); // Poll every 1 second instead of 100ms
+      }, 1000);
 
       return () => clearInterval(pollInterval);
     }
   }, [wsConnected, useFallback]);
 
-  const handleStrokeEnd = async (rawStroke) => {
+    const handleStrokeEnd = async (rawStroke) => {
     try {
       const validation = DataValidator.validateStroke(rawStroke);
       
       if (!validation.isValid) {
-        Logger.warn('Invalid stroke data', { errors: validation.errors });
         return;
       }
       
@@ -134,10 +120,8 @@ const App = () => {
       
       setStrokes(prev => {
         if (prev.some(s => s.id === stroke.id)) {
-          Logger.warn('Duplicate stroke ignored', { strokeId: stroke.id });
           return prev;
         }
-        Logger.debug('New stroke added', { strokeId: stroke.id, userId: stroke.userId });
         return [...prev, stroke];
       });
       
@@ -151,23 +135,16 @@ const App = () => {
     }
   };
 
-  const handleClear = async () => {
+    const handleClear = async () => {
     try {
-      Logger.info('Clearing board');
+      sendWebSocketMessage({ type: 'clear' });
       
-      // Send WebSocket message for real-time clear
-      const wsSent = sendWebSocketMessage({ type: 'clear' });
-      Logger.info('WebSocket clear message sent', { success: wsSent, message: { type: 'clear' } });
-      
-      // Also send REST request for server-side clear
       await retryManager.executeWithRetry(
         () => clearBoard(),
         'clear-board'
       );
       
-      // Clear local state immediately
       setStrokes([]);
-      Logger.info('Board cleared successfully');
     } catch (error) {
       Logger.error('Error clearing board', error);
     }
