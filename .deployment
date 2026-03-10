@@ -1,0 +1,2 @@
+[config]
+command = bash board-frontend/deploy.sh
