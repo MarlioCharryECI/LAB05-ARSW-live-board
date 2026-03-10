@@ -6,6 +6,7 @@ export default function Board({ color, width = 4, onStrokeEnd, strokes }) {
   const p5InstanceRef = useRef(null);
   const currentPathRef = useRef([]);
   const strokesRef = useRef(strokes);
+  const dimensionsRef = useRef({ width: window.innerWidth * 0.8654, height: window.innerHeight * 0.8 });
   
   useEffect(() => {
     strokesRef.current = strokes;
@@ -16,9 +17,17 @@ export default function Board({ color, width = 4, onStrokeEnd, strokes }) {
     
     const sketch = (p) => {
       p.setup = () => {
-        const canvas = p.createCanvas(800, 600);
+        const { width, height } = dimensionsRef.current;
+        const canvas = p.createCanvas(width, height);
         canvas.parent(containerRef.current);
         p.background(255);
+      };
+      
+      p.windowResized = () => {
+        const newWidth = window.innerWidth * 0.8654;
+        const newHeight = window.innerHeight * 0.8;
+        dimensionsRef.current = { width: newWidth, height: newHeight };
+        p.resizeCanvas(newWidth, newHeight);
       };
       
       p.draw = () => {
@@ -94,7 +103,10 @@ export default function Board({ color, width = 4, onStrokeEnd, strokes }) {
       ref={containerRef} 
       style={{ 
         border: '2px solid #ddd', 
-        borderRadius: '8px'
+        borderRadius: '8px',
+        overflow: 'hidden',
+        maxWidth: '100%',
+        maxHeight: '100%'
       }} 
     />
   );

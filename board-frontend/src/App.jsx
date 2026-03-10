@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import Board from './components/Board';
 import { join, getBoard } from './services/api';
@@ -13,6 +13,7 @@ const App = () => {
     const initializeUser = async () => {
       const uid = uuidv4();
       setUserId(uid);
+      localStorage.setItem('userId', uid);
 
       try {
         const response = await join(uid);
@@ -49,7 +50,7 @@ const App = () => {
     };
 
     syncBoard();
-    const interval = setInterval(syncBoard, 500);
+    const interval = setInterval(syncBoard, 100);
     return () => clearInterval(interval);
   }, [isConnected]);
 
