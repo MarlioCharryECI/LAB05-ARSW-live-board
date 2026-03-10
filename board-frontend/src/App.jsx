@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import Board from './components/BoardFinal';
+import Board from './components/Board';
 import { join, getBoard } from './services/api';
 
 const App = () => {
@@ -9,15 +9,8 @@ const App = () => {
   const [strokes, setStrokes] = useState([]);
   const [isConnected, setIsConnected] = useState(false);
 
-  // Debug: Log state changes
-  useEffect(() => {
-    console.log('State updated:', { userId, color, strokesLength: strokes.length, isConnected });
-  }, [userId, color, strokes.length, isConnected]);
-
-  // Inicialización del usuario
   useEffect(() => {
     const initializeUser = async () => {
-      // Generar un ID único para cada sesión/tab, no persistir en localStorage
       const uid = uuidv4();
       setUserId(uid);
 
@@ -33,19 +26,16 @@ const App = () => {
     initializeUser();
   }, []);
 
-  // Sincronización optimizada con el backend (mientras se configura WebSocket)
   useEffect(() => {
     if (!isConnected) return;
 
     const syncBoard = async () => {
       try {
         const boardData = await getBoard();
-        // Solo actualizar si los datos han cambiado (comparación por longitud y IDs)
         setStrokes(prevStrokes => {
           if (prevStrokes.length !== boardData.length) {
             return boardData;
           }
-          // Comparar IDs para detectar cambios
           const prevIds = prevStrokes.map(s => s.id).sort();
           const newIds = boardData.map(s => s.id).sort();
           if (JSON.stringify(prevIds) !== JSON.stringify(newIds)) {
@@ -58,53 +48,35 @@ const App = () => {
       }
     };
 
-    // Sincronización inicial
     syncBoard();
-
-    // Activar polling para sincronización multi-usuario vía API
-    const interval = setInterval(syncBoard, 500); // 500ms para sincronización rápida
+    const interval = setInterval(syncBoard, 500);
     return () => clearInterval(interval);
   }, [isConnected]);
 
   const handleStrokeEnd = async (stroke) => {
-    // Validate stroke before sending
-    console.log('Stroke data being sent:', stroke);
-    
     if (!stroke.id || !stroke.userId || !stroke.color || !stroke.points || stroke.points.length < 1) {
       console.error('Invalid stroke data:', stroke);
       return;
     }
     
-    // Agregar localmente inmediatamente para mejor UX
     setStrokes(prev => {
-      // Evitar duplicados
       if (prev.some(s => s.id === stroke.id)) {
         return prev;
       }
-      console.log('Adding stroke to local state:', stroke.id);
       return [...prev, stroke];
     });
     
-    // Enviar al backend en background (no bloquear)
-    console.log('Sending stroke to backend:', stroke);
     import('./services/api').then(({ sendStroke }) => {
       return sendStroke(stroke);
-    }).then(() => {
-      console.log('Stroke sent successfully to backend:', stroke.id);
     }).catch(error => {
-      console.error('Error enviando trazo al backend:', error);
-      console.error('Stroke that failed:', stroke);
-      // No remover el trazo local si falla el backend
+      console.error('Error enviando trazo:', error);
     });
   };
 
   const handleClear = async () => {
     try {
-      // Importar clearBoard dinámicamente
       const { clearBoard } = await import('./services/api');
       await clearBoard();
-      
-      // Limpiar localmente inmediatamente para mejor UX
       setStrokes([]);
     } catch (error) {
       console.error('Error limpiando tablero:', error);
