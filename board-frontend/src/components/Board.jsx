@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from "react";
 import p5 from "p5";
+import { generateUUID } from "../utils/uuid";
 
 export default function Board({ color, width = 4, onStrokeEnd, strokes }) {
   const containerRef = useRef(null);
@@ -80,7 +81,7 @@ export default function Board({ color, width = 4, onStrokeEnd, strokes }) {
         if (currentPathRef.current.length > 0) {
           const userId = localStorage.getItem("userId");
           const stroke = {
-            id: crypto.randomUUID(),
+            id: generateUUID(),
             userId: userId || "unknown",
             color: color || "#000000",
             width: width || 4,

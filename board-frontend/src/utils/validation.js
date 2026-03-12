@@ -1,4 +1,6 @@
 // utils/validation.js
+import { generateUUID } from "./uuid";
+
 export class DataValidator {
   static validateStroke(stroke) {
     const errors = [];
@@ -44,7 +46,7 @@ export class DataValidator {
 
   static sanitizeStroke(stroke) {
     return {
-      id: String(stroke.id || crypto.randomUUID()),
+      id: String(stroke.id || generateUUID()),
       userId: String(stroke.userId || "unknown"),
       color: this.sanitizeColor(stroke.color),
       width: Math.max(1, Math.min(50, Number(stroke.width) || 4)),
