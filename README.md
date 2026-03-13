@@ -181,27 +181,29 @@ El proyecto utiliza Biome para formateo y linting con las siguientes reglas:
 ## Despliegue en Producción
 
 ### URLs de Producción
-- **Frontend**: https://live-board-fcb6a0eedtdcgfh6.westus3-01.azurewebsites.net
+- **Frontend**: https://main.dmihaxmbdsqv8.amplifyapp.com/
 - **Backend**: https://live-board-backend-hfhff6b0f6cvf3h8.westus3-01.azurewebsites.net/api
 - **WebSocket**: wss://live-board-backend-hfhff6b0f6cvf3h8.westus3-01.azurewebsites.net/ws
 
-### Azure Web Apps
-El proyecto está desplegado en Azure Web Services:
-- **Frontend**: App Service estático con React
+### AWS Amplify (Frontend)
+El frontend está desplegado en AWS Amplify:
+- **Frontend**: Aplicación React estática hospedada en Amplify
+- **Región**: us-east-1
+- **Protocolos**: HTTPS seguro
+- **Trigger**: Conexión directa a repositorio GitHub
+- **Build**: npm install y build en board-frontend/
+- **Deploy**: Despliegue automático de Amplify
+- **Artefactos**: board-frontend/dist/
+
+### Azure Web Apps (Backend)
+El backend permanece en Azure Web Services:
 - **Backend**: App Service con Spring Boot y WebSocket
 - **Región**: West US 3
 - **Protocolos**: HTTPS/WSS seguros
 
-### GitHub Actions
-Despliegue automatizado mediante GitHub Actions:
-- **Trigger**: Push a rama main
-- **Build**: npm install y build en board-frontend/
-- **Deploy**: Azure Web Apps Deploy action
-- **Artefactos**: board-frontend/dist/
-
 ### Consideraciones de Producción
 - **CORS**: Configurado para permitir dominio del frontend
-- **HTTPS**: Configuración SSL/TLS para WebSocket seguro
+- **HTTPS**: Configuración SSL/TLS para conexiones seguras
 - **Escalabilidad**: Arquitectura sin estado para balanceo de carga
 - **Monitoreo**: Logs estructurados para debugging en producción
 

@@ -38,7 +38,7 @@ export default function Board({ color, width = 4, onStrokeEnd, strokes }) {
         p.background(255);
 
         const currentStrokes = strokesRef.current;
-        if (currentStrokes && currentStrokes.length > 0) {
+        if (currentStrokes?.length > 0) {
           currentStrokes.forEach((stroke) => {
             p.stroke(stroke.color || "#000000");
             p.strokeWeight(stroke.width || 4);
@@ -59,7 +59,7 @@ export default function Board({ color, width = 4, onStrokeEnd, strokes }) {
           currentPathRef.current.forEach((point) => {
             p.vertex(point.x, point.y);
           });
-          p.endShape();
+            p.endShape();
         }
       };
 
@@ -70,10 +70,8 @@ export default function Board({ color, width = 4, onStrokeEnd, strokes }) {
       };
 
       p.mouseDragged = () => {
-        if (p.mouseX >= 0 && p.mouseX <= p.width && p.mouseY >= 0 && p.mouseY <= p.height) {
-          if (currentPathRef.current.length > 0) {
-            currentPathRef.current.push({ x: p.mouseX, y: p.mouseY, t: Date.now() });
-          }
+        if (p.mouseX >= 0 && p.mouseX <= p.width && p.mouseY >= 0 && p.mouseY <= p.height && currentPathRef.current.length > 0) {
+          currentPathRef.current.push({ x: p.mouseX, y: p.mouseY, t: Date.now() });
         }
       };
 
@@ -106,11 +104,14 @@ export default function Board({ color, width = 4, onStrokeEnd, strokes }) {
     <div
       ref={containerRef}
       style={{
-        border: "2px solid #ddd",
-        borderRadius: "8px",
+        border: "none",
+        borderRadius: "12px",
         overflow: "hidden",
         maxWidth: "100%",
         maxHeight: "100%",
+        boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
+        background: "#ffffff",
+        position: "relative"
       }}
     />
   );
